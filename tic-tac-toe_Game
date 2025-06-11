@@ -41,7 +41,7 @@ void change_theme();
 
 int main() 
 {
-    Scoreboard scoreboard = {0, 0, 0};  //Assigning 0 initially to all three variables of scoreboard
+    Scoreboard scoreboard = {0, 0, 0}; //Assigning 0 initially to all three variables of scoreboard
     int choice, mode, aiLevel, first_move;
     char player1_name[100],player2_name[100];
 
