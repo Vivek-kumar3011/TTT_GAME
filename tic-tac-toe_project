@@ -1,0 +1,503 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+// Defining the Signs for the Player and its Rival
+#define PLAYER 'X'
+#define RIVAL 'O'
+
+// Using the ANSI escape codes for accessing the light and dark themes
+#define RESET "\033[0m"   
+#define LIGHT_BG "\033[47m"
+#define DARK_BG "\033[40m"
+#define LIGHT_TEXT "\033[30m"
+#define DARK_TEXT "\033[37m"
+
+
+typedef struct  //defining a structure for scoreboard
+{
+    int Player;
+    int Rival;
+    int Draw;
+} Scoreboard;
+
+
+int current_theme = 0; // declaring a variable for accessing the current theme
+
+// Declaring all the functions
+void print_board(char board[3][3]);
+void initialize_board(char board[3][3]);
+int check_for_winner(char board[3][3]);
+int isMovesLeft(char board[3][3]);
+void playerMove(char board[3][3],int turn, char player1_name[], char player2_name[]);
+void easy_mode(char board[3][3]);
+void medium_mode(char board[3][3]);
+void hard_mode(char board[3][3]);
+void start_game(int mode, int aiLevel, int firstPlayer, Scoreboard *scoreboard, char player1_name[], char player2_name[]);
+void light_theme();
+void dark_theme();
+void change_theme();
+
+int main() 
+{
+    Scoreboard scoreboard = {0, 0, 0};  //Assigning 0 initially to all three variables of scoreboard
+    int choice, mode, aiLevel, first_move;
+    char player1_name[100],player2_name[100];
+
+    while (1) 
+    {
+        //clear_screen();
+        //reset_cursor();
+        //system("clear");
+        
+        if (current_theme == 0)
+            light_theme();
+        else
+            dark_theme();
+
+        printf("===== Tic-Tac-Toe =====\n\n");
+        printf("1. Two Player \n");
+        printf("2. AI Mode \n");
+        printf("3. View Scoreboard \n");
+        printf("4. Change Theme \n");
+        printf("5. Exit \n");
+        printf("\n\n");
+        
+        printf("Please select your choice : ");
+        scanf("%d", &choice);
+        printf("\n");
+
+        if (choice == 5)  // Exits from the game if 5th choice is chosen
+        {
+            printf("Hope you enjoyed the game !!\n");
+            printf("Exiting...\n");
+            break;
+        }
+
+        switch (choice)  //  Using switch cases for accessing the things and modes selected by the user
+        {
+            case 1:  // Access the Two Player Mode
+                printf("Enter Player 1's name : ");
+                //fgets(player1_name, sizeof(player1_name), stdin);
+                scanf("%s", player1_name);
+                printf("Enter Player 2's name : ");
+                //fgets(player2_name, sizeof(player2_name), stdin);
+                scanf("%s", player2_name);
+                
+                start_game(1, 0, 0, &scoreboard,player1_name,player2_name);
+                break;
+                
+            case 2:  //  Access the AI Mode
+                printf("Enter your name : ");
+                scanf("%s", player1_name);
+                printf("\n");
+                printf("Select AI Level:\n");
+                printf("1. Easy\n2. Medium\n3. Hard\n");
+                printf("\n");
+                printf("Enter your choice: ");
+                scanf("%d", &aiLevel);
+                printf("\n");
+                printf("Who will do the move first? \n");
+                printf("1. %s \n2. AI \n", player1_name);
+                printf("\n");
+                printf("Select any choice: ");
+                scanf("%d", &first_move);
+                printf("\n");
+                start_game(2, aiLevel, first_move, &scoreboard, player1_name, NULL);
+                break;
+                
+            case 3:  // Access the scoreboard and print the board
+                 //clear_screen();
+                 //reset_cursor();
+                printf("\n=== Scoreboard ===\n");
+                printf("%s Wins: %d\n",player1_name, scoreboard.Player);
+                printf("Rival(AI or Player) Wins: %d\n", scoreboard.Rival);
+                printf("Draws: %d\n", scoreboard.Draw);
+                printf("\n");
+                break;
+                
+            case 4:
+                change_theme();  // interchange the theme between dark and light themes
+                break;
+                
+            default:
+                printf("Invalid choice !! \n"); //  printing the default statement
+        }
+    }
+
+    return 0;
+}
+
+void print_board(char board[3][3]) // printing the board for tic tac toe
+{
+    //reset_cursor();
+    printf("\n");
+    printf("Current Board : \n\n");
+    for (int i = 0; i < 3; i++) 
+    {
+        for (int j = 0; j < 3; j++) 
+        {
+            printf(" %c ", board[i][j]);
+            if (j < 2) printf("|");
+        }
+        printf("\n");
+        if (i < 2) printf("---|---|---\n");
+    }
+    printf("\n");
+}
+
+void initialize_board(char board[3][3])  // intializing each cells of tic tac toe with spaces
+{
+    for (int i = 0; i < 3; i++) 
+    {
+        for (int j = 0; j < 3; j++) 
+        {
+            board[i][j] = ' ';
+        }
+    }
+}
+
+int check_for_winner(char board[3][3]) //  check if any of player or rival or AI wins the or not
+{
+    for (int i = 0; i < 3; i++) 
+    {
+        if (board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][0] != ' ')  //  checking if any of the rows have same symbols 
+           {
+             if (board[i][0] == PLAYER)
+             return 1;
+             else
+             return -1;
+           }
+    }
+    for (int j = 0; j < 3; j++) 
+    {
+        if (board[0][j] == board[1][j] && board[1][j] == board[2][j] && board[0][j] != ' ')  //  checking if any of the coloumns have same symbols 
+            {
+              if(board[0][j] == PLAYER)
+              return 1;
+              else
+              return -1;
+            }
+    }
+    if (board[0][0] == board[1][1] && board[1][1] == board[2][2] && board[0][0] != ' ')  //  checking if right have same symbols 
+      {
+        if(board[0][0] == PLAYER)
+        return 1;
+        else
+        return -1;
+      }
+       // return board[0][0] == PLAYER ? 1 : -1;
+    if (board[0][2] == board[1][1] && board[1][1] == board[2][0] && board[0][2] != ' ')  //  checking if left diagonal have same symbols 
+    {
+      if(board[0][2] == PLAYER)
+      return 1;
+      else
+      return -1;
+    }
+       // return board[0][2] == PLAYER ? 1 : -1;
+
+    return 0;
+}
+
+int isMovesLeft(char board[3][3]) //checking in any cell is still empty in board for making a movr
+{
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 3; j++)
+        {
+            if (board[i][j] == ' ')
+                return 1;
+        }
+    }
+    return 0;
+}
+
+void playerMove(char board[3][3], int turn, char player1_name[], char player2_name[]) 
+{
+      int move;
+      char symbol;
+      if (turn == 0)  // Determine symbol based on turn (0 = Player 1, 1 = Player 2)
+      symbol = PLAYER;
+      else
+      symbol = RIVAL;
+      
+    while (1) 
+    {
+        if ((player1_name ) && (player2_name )) // Two player mode
+        printf("%s (%c) -> Enter your move (1-9): ", (turn == 0) ? player1_name : player2_name, symbol);
+        
+        else  // AI mode
+        printf("Enter your move (1-9): ");
+        
+        scanf("%d", &move);
+
+        if (move >= 1 && move <= 9) 
+        {
+            int i = (move - 1) / 3;
+            int j = (move - 1) % 3;
+
+            if (board[i][j] == ' ') 
+            {
+                board[i][j] = symbol; // Use the determined symbol for the current turn
+                break;
+            }
+        }
+        printf("Invalid move!! Try again.\n");
+    }
+}
+
+
+void easy_mode(char board[3][3]) // defining the easy mode of AI
+{
+    int x, y;
+    srand(time(0));  // seed the random number generator by using current time
+    while (1) 
+ {
+        x = rand() % 3;  //generate random index for rows (0,1,2)
+        y = rand() % 3;  // generate random index for coloumns (0,1,2)
+        if (board[x][y] == ' ') 
+        {
+            board[x][y] = RIVAL;  // Assigning Rival' sign to the empty cell
+            break;
+        }
+    }
+}
+
+void medium_mode(char board[3][3]) // defining the medium mode of AI
+{
+
+//Checking if AI can win the game
+    for (int i = 0; i < 3; i++) 
+    {
+        for (int j = 0; j < 3; j++) 
+        {
+            if (board[i][j] == ' ') 
+            {
+                board[i][j] = RIVAL;
+                if (check_for_winner(board) == -1)  // checking if AI wins the game and return if so
+                return;
+                
+                board[i][j] = ' ';  // undo the move if AI does not win
+            }
+        }
+    }
+    
+    // Checking if AI can block the Player(You)
+    for (int i = 0; i < 3; i++) 
+    {
+        for (int j = 0; j < 3; j++) 
+        {
+            if (board[i][j] == ' ') 
+            {
+                board[i][j] = PLAYER;
+                if (check_for_winner(board) == 1) // checking if player(You) is winning the game
+                {
+                    board[i][j] = RIVAL; // Assigning the sign of AI to block the player(You) from winning
+                    return;
+                }
+                board[i][j] = ' ';  // Undo the move if AI does not able to block the player(You)
+            }
+        }
+    }
+    easy_mode(board); // Assign the AI's sign to any random cell if no such strategic move is possible
+}
+
+void hard_mode(char board[3][3])  // defining the hard mode of AI by implementing the minimax algorithm
+{
+    int highest_score = -10000;
+    int best_row = -1, best_col = -1;
+
+    for (int i = 0; i < 3; i++) 
+    {
+        for (int j = 0; j < 3; j++) 
+        {
+            if (board[i][j] == ' ')  //checking if current cell if empty
+            {
+                board[i][j] = RIVAL;  // AI will temporarily make a move 
+                int move_score = minimax(board, 0, 0);  // calculate the score for this move
+                board[i][j] = ' '; // undo the move
+                
+                // update the highest score if current move has a higher score 
+                if (move_score > highest_score) 
+                {
+                    best_row = i;
+                    best_col = j;
+                    highest_score = move_score;
+                }
+            }
+        }
+    }
+    
+    // AI will made that move which made the highest score 
+    board[best_row][best_col] = RIVAL;
+}
+
+int minimax(char board[3][3], int depth, int max_chance) 
+{
+    int score = calculate_score(board);  // check the current board state
+    if(score == 10)
+    return 10 - depth;
+    if (score == -10)
+    return -10 + depth;
+    //return score;
+    if (isMovesLeft(board) == 0) 
+    return 0;
+
+    if (max_chance == 1) 
+    {
+        int best_score = -1000;  // Asssigning very low value to best_score for maximizing AI's winning chance
+        for (int i = 0; i < 3; i++) 
+        {
+            for (int j = 0; j < 3; j++) 
+            {
+                if (board[i][j] == ' ') 
+                {
+                    board[i][j] = RIVAL; // Temporarily assings the current symbol of AI for calculating the score
+                    
+                    // Calculating the best_score recursively
+                    //best_score = (best_score > minimax(board, depth + 1, 0)) ? best_score : minimax(board, depth + 1, 0);
+                    int store_score = minimax(board, depth + 1, 0);
+                    if (store_score > best_score)
+                    best_score = store_score;
+                    
+                    board[i][j] = ' ';  // undo the move
+                }
+            }
+        }
+        return best_score;
+    } 
+    else 
+    {
+    
+    // AI tries to minimize player's winning chance
+        int best_score = 1000;  //Asssigning very high value to best_score for minimizing player's winning chance
+        for (int i = 0; i < 3; i++) 
+        {
+            for (int j = 0; j < 3; j++) 
+            {
+                if (board[i][j] == ' ') 
+                {
+                    board[i][j] = PLAYER; // Temporarily assings the current symbol of player for calculating the score
+                    best_score = (best_score < minimax(board, depth + 1, 1)) ? best_score : minimax(board, depth + 1, 1);
+                    board[i][j] = ' ';  // undo the move
+                }
+            }
+        }
+        return best_score;
+    }
+}
+
+int calculate_score(char board[3][3]) 
+{
+    int win = check_for_winner(board);
+    
+    if (win == 1) 
+    return -10;  // returning -10, if player is the winner
+    if (win == -1) 
+    return 10;   // returning 10, if rival is the winner
+    
+    return 0;
+}
+
+void start_game(int mode, int aiLevel, int first_move, Scoreboard *scoreboard, char player1_name[], char player2_name[]) //starting the game
+{
+    char board[3][3];
+    initialize_board(board);
+
+    //int turn = (firstPlayer == 1) ? 0 : 1; // 0 for Player, 1 for AI/Rival
+    int turn;
+    if(first_move == 1)  //// 0 for Player, 1 for AI/Rival
+    turn = 0;
+    else
+    turn = 1;
+    
+    int winner;
+
+    while (1) 
+    {
+        print_board(board);
+
+        if (check_for_winner(board) == 1) 
+        {
+            printf("%s is the winner !!\n", player1_name);
+            scoreboard->Player++;
+            break;
+        } 
+        else if (check_for_winner(board) == -1) 
+        {
+            if(mode == 1)
+            printf("%s is the winner !!\n", player2_name);
+            else
+            printf("AI is the winner !!\n");
+            scoreboard->Rival++;
+            break;
+        } 
+        else if (isMovesLeft(board) == 0) 
+        {
+            printf("Draw!! \n");
+            scoreboard->Draw++;
+            break;
+        }
+
+        if (mode == 1)  // Two Player Mode
+            {
+            printf("Turn: %s\n", turn == 0 ? "player1_name" : "player2_name");
+            playerMove(board, turn, player1_name, player2_name);
+          //  board[turn == 0 ? 0 : 1][0] = (turn == 0 ? 'X' : 'O');
+        } 
+        else if (mode == 2)  // AI Mode
+          {
+            if (turn == 0)  // Your's turn
+               {
+                printf("%s's turn:\n", player1_name);
+                playerMove(board, turn, player1_name, NULL);
+            } 
+            else  // AI's turn
+            {
+                printf("AI's turn:\n");
+                if (aiLevel == 1)
+                    easy_mode(board);
+                else if (aiLevel == 2)
+                    medium_mode(board);
+                else
+                    hard_mode(board);
+            }
+        }
+
+        turn = 1 - turn; // Switch turn
+    }
+
+    print_board(board);
+
+    char option;
+    printf("Do you want to restart the game? (y/n): ");
+    scanf(" %c", &option);
+    printf("\n");
+    if (option == 'y' || option == 'Y') 
+    {
+        start_game(mode, aiLevel, first_move, scoreboard, player1_name, player2_name);
+    }
+}
+
+void light_theme()  // defining the ligth_theme function
+{
+    printf("%s %s", LIGHT_BG, LIGHT_TEXT);
+}
+
+void dark_theme() // defining the dark_theme function
+{
+    printf("%s %s", DARK_BG, DARK_TEXT);
+}
+
+void change_theme() // defining the change_theme function
+{
+    current_theme = 1 - current_theme; // Switch between 0 (light) and 1 (dark)
+    if (current_theme == 0) 
+    {
+        printf("Switched to Light Theme.\n");
+    } else 
+    {
+        printf("Switched to Dark Theme.\n");
+    }
+}
